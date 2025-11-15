@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Step &amp; Calorie Dashboard</title>
     <link rel="stylesheet" href="styles.css" />
-    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script defer src="app.js"></script>
   </head>
   <body>
@@ -46,9 +45,26 @@
       <section class="chart-card">
         <div class="section-title">
           <h2>Steps timeline</h2>
-          <button id="refresh-btn" type="button">Refresh</button>
+          <div class="section-actions">
+            <button id="refresh-btn" type="button">Refresh</button>
+            <button id="reset-btn" type="button" class="danger">Reset Data</button>
+          </div>
         </div>
-        <canvas id="steps-chart" height="120"></canvas>
+        <div class="sparkline-shell">
+          <svg
+            id="steps-chart"
+            class="sparkline"
+            viewBox="0 0 100 60"
+            preserveAspectRatio="none"
+            role="img"
+            aria-label="Steps trend"
+          >
+            <polygon id="sparkline-fill" class="sparkline-fill"></polygon>
+            <polyline id="sparkline-line" class="sparkline-line"></polyline>
+          </svg>
+          <p id="chart-empty" class="placeholder">Waiting for samples…</p>
+        </div>
+        <ul id="steps-legend" class="steps-legend"></ul>
       </section>
 
       <section class="table-card">

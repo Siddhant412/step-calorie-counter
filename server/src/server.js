@@ -53,15 +53,38 @@ const normalizeSample = (payload) => ({
   },
 });
 
-const buildSummary = (list) => list.reduce(
-  (acc, item) => {
-    acc.steps += item.sample.steps;
-    acc.distance += item.sample.distance;
-    acc.calories += item.sample.calories;
-    return acc;
-  },
-  { steps: 0, distance: 0, calories: 0 }
-);
+const findMatchingIndex = (incoming) =>
+  metrics.findIndex(
+    (item) =>
+      item.device.deviceId === incoming.device.deviceId &&
+      item.sample.start === incoming.sample.start &&
+      item.sample.end === incoming.sample.end
+  );
+
+const buildSummary = (list) => {
+  if (!list.length) {
+    return { steps: 0, distance: 0, calories: 0 };
+  }
+
+  const latestByDevice = new Map();
+  list.forEach((item) => {
+    const key = item.device.deviceId;
+    const existing = latestByDevice.get(key);
+    if (!existing || new Date(item.sample.end) > new Date(existing.sample.end)) {
+      latestByDevice.set(key, item);
+    }
+  });
+
+  return Array.from(latestByDevice.values()).reduce(
+    (acc, item) => {
+      acc.steps += item.sample.steps;
+      acc.distance += item.sample.distance;
+      acc.calories += item.sample.calories;
+      return acc;
+    },
+    { steps: 0, distance: 0, calories: 0 }
+  );
+};
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', count: metrics.length });
@@ -85,9 +108,17 @@ app.get('/api/metrics', (req, res) => {
     }
   }
 
+  const latestSample = data.reduce((latest, item) => {
+    if (!latest) {
+      return item;
+    }
+    return new Date(item.sample.end) > new Date(latest.sample.end) ? item : latest;
+  }, null);
+
   res.json({
     data,
     totals: buildSummary(data),
+    current: latestSample,
   });
 });
 
@@ -97,8 +128,20 @@ app.post('/api/metrics', async (req, res) => {
   }
 
   const sample = normalizeSample(req.body);
-  metrics.push(sample);
+  const existingIndex = findMatchingIndex(sample);
 
+  if (existingIndex >= 0) {
+    const existing = metrics[existingIndex];
+    metrics[existingIndex] = {
+      ...existing,
+      receivedAt: sample.receivedAt,
+      sample: sample.sample,
+    };
+    await persistToDisk();
+    return res.status(200).json({ message: 'updated', id: existing.id });
+  }
+
+  metrics.push(sample);
   await persistToDisk();
   res.status(201).json({ message: 'stored', id: sample.id });
 });

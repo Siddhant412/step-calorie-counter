@@ -72,6 +72,19 @@ final class PedometerManager: ObservableObject {
         lastAutoUpload = .distantPast
     }
 
+    func resetServerData(completion: @escaping (Result<Void, Error>) -> Void) {
+        apiClient.resetMetrics { result in
+            DispatchQueue.main.async {
+                if case .success = result {
+                    self.currentSample = nil
+                    self.lastUploadAt = nil
+                    self.errorMessage = nil
+                }
+                completion(result)
+            }
+        }
+    }
+
     private func handle(_ data: CMPedometerData) {
         let stepCount = data.numberOfSteps.intValue
         let distance = data.distance?.doubleValue ?? Double(stepCount) * configuration.strideLength

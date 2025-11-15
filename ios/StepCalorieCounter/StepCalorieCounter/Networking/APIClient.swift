@@ -70,4 +70,28 @@ final class APIClient {
             completion(.success(()))
         }.resume()
     }
+
+    func resetMetrics(completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let baseURL else {
+            completion(.failure(APIError.invalidURL))
+            return
+        }
+
+        var request = URLRequest(url: baseURL.appendingPathComponent("api/metrics"))
+        request.httpMethod = "DELETE"
+
+        session.dataTask(with: request) { _, response, error in
+            if let error {
+                completion(.failure(error))
+                return
+            }
+
+            guard let httpResponse = response as? HTTPURLResponse, 200..<300 ~= httpResponse.statusCode else {
+                completion(.failure(APIError.invalidResponse))
+                return
+            }
+
+            completion(.success(()))
+        }.resume()
+    }
 }

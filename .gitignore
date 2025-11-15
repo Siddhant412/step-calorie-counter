@@ -36,3 +36,4 @@ pnpm-debug.log*
 # OS-generated
 Thumbs.db
 .env
+ngrok-tunnel.yml
