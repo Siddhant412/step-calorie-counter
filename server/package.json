@@ -1,0 +1,16 @@
+{
+  "name": "step-calorie-counter-server",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Minimal API for ingesting iOS pedometer samples and serving them to the dashboard",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "NODE_ENV=production node src/server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "morgan": "^1.10.0"
+  }
+}

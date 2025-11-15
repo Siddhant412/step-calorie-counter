@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Step &amp; Calorie Dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <main class="container">
+      <header class="page-header">
+        <div>
+          <h1>Steps &amp; Calories</h1>
+          <p>Live data streamed from your iPhone collector.</p>
+        </div>
+        <form id="api-form" class="api-form">
+          <label>
+            API base URL
+            <input type="url" id="api-base" name="api" required placeholder="http://localhost:4000" />
+          </label>
+          <button type="submit">Save</button>
+        </form>
+      </header>
+
+      <section class="stats-grid" aria-live="polite">
+        <article class="stat-card">
+          <h2>Steps</h2>
+          <p class="stat-value" data-field="steps">0</p>
+        </article>
+        <article class="stat-card">
+          <h2>Calories (kcal)</h2>
+          <p class="stat-value" data-field="calories">0</p>
+        </article>
+        <article class="stat-card">
+          <h2>Distance (km)</h2>
+          <p class="stat-value" data-field="distance">0</p>
+        </article>
+        <article class="stat-card">
+          <h2>Samples</h2>
+          <p class="stat-value" data-field="count">0</p>
+        </article>
+      </section>
+
+      <section class="chart-card">
+        <div class="section-title">
+          <h2>Steps timeline</h2>
+          <button id="refresh-btn" type="button">Refresh</button>
+        </div>
+        <canvas id="steps-chart" height="120"></canvas>
+      </section>
+
+      <section class="table-card">
+        <div class="section-title">
+          <h2>Recent samples</h2>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Time window</th>
+                <th>Steps</th>
+                <th>Calories</th>
+                <th>Distance (km)</th>
+              </tr>
+            </thead>
+            <tbody id="metrics-body">
+              <tr>
+                <td colspan="4" class="placeholder">No data yet</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
