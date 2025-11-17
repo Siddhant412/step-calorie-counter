@@ -22,8 +22,6 @@ final class PedometerManager: ObservableObject {
     private var configuration = UserConfiguration.default
     private var lastAutoUpload = Date.distantPast
     private let intervalDefaultsKey = "uploadIntervalSeconds"
-    private var uploadTimer: Timer?
-    private var latestSample: StepSample?
     private var lastUploadedSample: StepSample?
 
     init() {
@@ -44,7 +42,6 @@ final class PedometerManager: ObservableObject {
 
         refreshAuthorizationStatus()
         lastAutoUpload = .distantPast
-        startUploadTimer()
 
         pedometer.startUpdates(from: Date()) { [weak self] data, error in
             guard let self else { return }
@@ -68,7 +65,6 @@ final class PedometerManager: ObservableObject {
 
     func stopTracking() {
         pedometer.stopUpdates()
-        stopUploadTimer()
         pushLatestSample()
         DispatchQueue.main.async {
             self.isTracking = false
@@ -116,17 +112,14 @@ final class PedometerManager: ObservableObject {
             end: data.endDate
         )
 
-        latestSample = sample
-
         DispatchQueue.main.async {
             self.currentSample = sample
         }
 
-        attemptUploadIfNeeded()
+        maybeUpload(sample)
     }
 
-    private func attemptUploadIfNeeded() {
-        guard let sample = latestSample else { return }
+    private func maybeUpload(_ sample: StepSample) {
         if let lastUploadedSample,
            lastUploadedSample.steps == sample.steps,
            abs(lastUploadedSample.calories - sample.calories) < 0.01,
@@ -169,20 +162,6 @@ final class PedometerManager: ObservableObject {
         }
     }
 
-    private func startUploadTimer() {
-        stopUploadTimer()
-        uploadTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.attemptUploadIfNeeded()
-        }
-        if let uploadTimer {
-            RunLoop.main.add(uploadTimer, forMode: .common)
-        }
-    }
-
-    private func stopUploadTimer() {
-        uploadTimer?.invalidate()
-        uploadTimer = nil
-    }
 }
 
 private struct UserConfiguration {
