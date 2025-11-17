@@ -19,10 +19,10 @@ let apiBase = localStorage.getItem('apiBase') || 'http://localhost:4000';
 let refreshTimer;
 const MAX_POINTS = 24;
 
-const formatNumber = (value, digits = 1) =>
+const formatNumber = (value, { min = 1, max = 1 } = {}) =>
   new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
+    minimumFractionDigits: min,
+    maximumFractionDigits: max,
   }).format(value);
 
 const normalizeUrl = (value) => {
@@ -47,9 +47,13 @@ const updateSummary = (payload) => {
   const { totals, data, current } = payload;
   const source = current?.sample || totals;
   summaryFields.steps.textContent = (source.steps || 0).toLocaleString();
-  summaryFields.calories.textContent = formatNumber(source.calories || 0, 1);
+  summaryFields.calories.textContent = formatNumber(source.calories || 0, { min: 1, max: 1 });
   const distanceKm = (source.distance || 0) / 1000;
-  summaryFields.distance.textContent = formatNumber(distanceKm, distanceKm < 1 ? 2 : 1);
+  const distanceOptions =
+    distanceKm < 1
+      ? { min: 2, max: 3 }
+      : { min: 1, max: 1 };
+  summaryFields.distance.textContent = formatNumber(distanceKm, distanceOptions);
   summaryFields.count.textContent = data.length;
 };
 
@@ -67,8 +71,8 @@ const updateTable = (rows) => {
       return `<tr>
         <td>${interval}</td>
         <td>${entry.sample.steps.toLocaleString()}</td>
-        <td>${formatNumber(entry.sample.calories, 1)}</td>
-        <td>${formatNumber(entry.sample.distance / 1000, entry.sample.distance < 1000 ? 2 : 1)}</td>
+        <td>${formatNumber(entry.sample.calories, { min: 1, max: 1 })}</td>
+        <td>${formatNumber(entry.sample.distance / 1000, entry.sample.distance < 1000 ? { min: 2, max: 3 } : { min: 1, max: 1 })}</td>
       </tr>`;
     })
     .join('');

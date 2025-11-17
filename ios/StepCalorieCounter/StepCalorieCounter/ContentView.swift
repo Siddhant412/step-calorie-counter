@@ -6,7 +6,7 @@ struct ContentView: View {
     @AppStorage("serverURL") private var serverURL: String = "http://localhost:4000"
     @AppStorage("weightKg") private var weightKg: Double = 72
     @AppStorage("heightCm") private var heightCm: Double = 175
-    @State private var uploadInterval: Double = 60
+    @State private var sliderInterval: Double = 60
     @State private var showingResetConfirmation = false
     @State private var resetAlertMessage: String?
 
@@ -36,7 +36,7 @@ struct ContentView: View {
     private var contentBody: some View {
         rootContent
             .onAppear {
-                uploadInterval = pedometer.uploadInterval
+                sliderInterval = pedometer.uploadInterval
                 updateConfiguration()
             }
             .confirmationDialog(
@@ -140,7 +140,7 @@ struct ContentView: View {
                     }
                 }
 
-                SectionCard(title: "Profile & API", footer: "Server URL should point to the backend POST /api/metrics endpoint running on your network.") {
+                SectionCard(title: "Profile & API", footer: "Server URL should point to the backend POST /api/metrics endpoint.") {
                     TextField("Server URL", text: $serverURL)
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
@@ -161,11 +161,14 @@ struct ContentView: View {
                         HStack {
                             Text("Upload every")
                             Spacer()
-                            Text("\(Int(uploadInterval)) s").monospacedDigit()
+                            Text("\(Int(sliderInterval)) s").monospacedDigit()
                         }
-                        Slider(value: $uploadInterval, in: 20...300, step: 10) { _ in
-                            pedometer.updateUploadInterval(uploadInterval)
+                        Slider(value: $sliderInterval, in: 5...300, step: 5) { _ in
+                            pedometer.updateUploadInterval(sliderInterval)
                         }
+                        Text("Choose between 5 seconds and 5 minutes for automatic uploads.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                 }
             }

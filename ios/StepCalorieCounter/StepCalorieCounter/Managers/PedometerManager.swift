@@ -15,12 +15,26 @@ final class PedometerManager: ObservableObject {
     @Published private(set) var lastUploadAt: Date?
     @Published private(set) var errorMessage: String?
     @Published private(set) var isTracking = false
-    @Published private(set) var uploadInterval: Double = 60
+    @Published private(set) var uploadInterval: Double
 
     private let pedometer = CMPedometer()
     private let apiClient = APIClient()
     private var configuration = UserConfiguration.default
     private var lastAutoUpload = Date.distantPast
+    private let intervalDefaultsKey = "uploadIntervalSeconds"
+    private var uploadTimer: Timer?
+    private var latestSample: StepSample?
+    private var lastUploadedSample: StepSample?
+
+    init() {
+        let storedInterval = UserDefaults.standard.double(forKey: intervalDefaultsKey)
+        if storedInterval > 0 {
+            uploadInterval = storedInterval
+        } else {
+            uploadInterval = 60
+            UserDefaults.standard.set(60.0, forKey: intervalDefaultsKey)
+        }
+    }
 
     func startTracking() {
         guard CMPedometer.isStepCountingAvailable() else {
@@ -29,6 +43,8 @@ final class PedometerManager: ObservableObject {
         }
 
         refreshAuthorizationStatus()
+        lastAutoUpload = .distantPast
+        startUploadTimer()
 
         pedometer.startUpdates(from: Date()) { [weak self] data, error in
             guard let self else { return }
@@ -52,6 +68,8 @@ final class PedometerManager: ObservableObject {
 
     func stopTracking() {
         pedometer.stopUpdates()
+        stopUploadTimer()
+        pushLatestSample()
         DispatchQueue.main.async {
             self.isTracking = false
         }
@@ -59,6 +77,7 @@ final class PedometerManager: ObservableObject {
 
     func pushLatestSample() {
         guard let sample = currentSample else { return }
+        lastAutoUpload = Date()
         upload(sample)
     }
 
@@ -70,6 +89,7 @@ final class PedometerManager: ObservableObject {
     func updateUploadInterval(_ seconds: Double) {
         uploadInterval = seconds
         lastAutoUpload = .distantPast
+        UserDefaults.standard.set(seconds, forKey: intervalDefaultsKey)
     }
 
     func resetServerData(completion: @escaping (Result<Void, Error>) -> Void) {
@@ -96,14 +116,23 @@ final class PedometerManager: ObservableObject {
             end: data.endDate
         )
 
+        latestSample = sample
+
         DispatchQueue.main.async {
             self.currentSample = sample
         }
 
-        maybeUpload(sample)
+        attemptUploadIfNeeded()
     }
 
-    private func maybeUpload(_ sample: StepSample) {
+    private func attemptUploadIfNeeded() {
+        guard let sample = latestSample else { return }
+        if let lastUploadedSample,
+           lastUploadedSample.steps == sample.steps,
+           abs(lastUploadedSample.calories - sample.calories) < 0.01,
+           abs(lastUploadedSample.distance - sample.distance) < 0.5 {
+            return
+        }
         let elapsed = Date().timeIntervalSince(lastAutoUpload)
         guard elapsed >= uploadInterval else { return }
         lastAutoUpload = Date()
@@ -117,6 +146,7 @@ final class PedometerManager: ObservableObject {
                 case .success:
                     self?.lastUploadAt = Date()
                     self?.errorMessage = nil
+                    self?.lastUploadedSample = sample
                 case .failure(let error):
                     self?.errorMessage = error.localizedDescription
                 }
@@ -137,6 +167,21 @@ final class PedometerManager: ObservableObject {
         @unknown default:
             authorizationState = .notDetermined
         }
+    }
+
+    private func startUploadTimer() {
+        stopUploadTimer()
+        uploadTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.attemptUploadIfNeeded()
+        }
+        if let uploadTimer {
+            RunLoop.main.add(uploadTimer, forMode: .common)
+        }
+    }
+
+    private func stopUploadTimer() {
+        uploadTimer?.invalidate()
+        uploadTimer = nil
     }
 }
 
