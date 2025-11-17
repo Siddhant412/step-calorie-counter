@@ -42,6 +42,46 @@
         </article>
       </section>
 
+      <section class="goals-card">
+        <div class="section-title">
+          <h2>Daily goals</h2>
+          <span id="streak-pill" class="streak-pill">Streak: 0 days</span>
+        </div>
+
+        <div class="progress-list">
+          <div class="progress-row">
+            <div>
+              <p>Steps</p>
+              <small id="steps-progress-label">0 / 0</small>
+            </div>
+            <div class="progress-bar">
+              <span id="steps-progress" style="width:0%"></span>
+            </div>
+          </div>
+          <div class="progress-row">
+            <div>
+              <p>Calories</p>
+              <small id="calories-progress-label">0 / 0</small>
+            </div>
+            <div class="progress-bar">
+              <span id="calories-progress" style="width:0%"></span>
+            </div>
+          </div>
+        </div>
+
+        <form id="goals-form" class="goal-form">
+          <label>
+            Step goal
+            <input type="number" id="goal-steps" min="1" required />
+          </label>
+          <label>
+            Calorie goal
+            <input type="number" id="goal-calories" min="1" step="0.1" required />
+          </label>
+          <button type="submit">Save goals</button>
+        </form>
+      </section>
+
       <section class="chart-card">
         <div class="section-title">
           <h2>Steps timeline</h2>

@@ -16,6 +16,12 @@ final class PedometerManager: ObservableObject {
     @Published private(set) var errorMessage: String?
     @Published private(set) var isTracking = false
     @Published private(set) var uploadInterval: Double
+    @Published private(set) var goalSettings: GoalSettings = .default
+    @Published private(set) var todayProgress: SummaryPayload.TodayProgress?
+    @Published private(set) var streakDays: Int = 0
+    @Published private(set) var isUpdatingGoals = false
+    @Published private(set) var sessionBaselineSteps: Double = 0
+    @Published private(set) var sessionBaselineCalories: Double = 0
 
     private let pedometer = CMPedometer()
     private let apiClient = APIClient()
@@ -32,6 +38,8 @@ final class PedometerManager: ObservableObject {
             uploadInterval = 60
             UserDefaults.standard.set(60.0, forKey: intervalDefaultsKey)
         }
+
+        refreshSummary()
     }
 
     func startTracking() {
@@ -42,6 +50,8 @@ final class PedometerManager: ObservableObject {
 
         refreshAuthorizationStatus()
         lastAutoUpload = .distantPast
+        sessionBaselineSteps = todayProgress?.steps ?? sessionBaselineSteps
+        sessionBaselineCalories = todayProgress?.calories ?? sessionBaselineCalories
 
         pedometer.startUpdates(from: Date()) { [weak self] data, error in
             guard let self else { return }
@@ -80,6 +90,7 @@ final class PedometerManager: ObservableObject {
     func updateConfiguration(serverURL: String, weightKg: Double, heightCm: Double) {
         configuration = UserConfiguration(weightKg: weightKg, heightCm: heightCm)
         apiClient.updateBaseURL(serverURL)
+        refreshSummary()
     }
 
     func updateUploadInterval(_ seconds: Double) {
@@ -95,6 +106,7 @@ final class PedometerManager: ObservableObject {
                     self.currentSample = nil
                     self.lastUploadAt = nil
                     self.errorMessage = nil
+                    self.refreshSummary()
                 }
                 completion(result)
             }
@@ -140,6 +152,7 @@ final class PedometerManager: ObservableObject {
                     self?.lastUploadAt = Date()
                     self?.errorMessage = nil
                     self?.lastUploadedSample = sample
+                    self?.refreshSummary()
                 case .failure(let error):
                     self?.errorMessage = error.localizedDescription
                 }
@@ -160,6 +173,59 @@ final class PedometerManager: ObservableObject {
         @unknown default:
             authorizationState = .notDetermined
         }
+    }
+
+    func refreshSummary() {
+        apiClient.fetchSummary { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let summary):
+                    self?.apply(summary)
+                case .failure(let error):
+                    self?.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    func saveGoals(steps: Int, calories: Double) {
+        isUpdatingGoals = true
+        let payload = GoalSettings(steps: steps, calories: calories)
+        apiClient.updateGoals(payload) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.isUpdatingGoals = false
+                switch result {
+                case .success(let summary):
+                    self?.apply(summary)
+                case .failure(let error):
+                    self?.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    private func apply(_ summary: SummaryPayload) {
+        goalSettings = summary.goals
+        todayProgress = summary.today
+        streakDays = summary.streak.days
+        if !isTracking {
+            sessionBaselineSteps = summary.today.steps
+            sessionBaselineCalories = summary.today.calories
+        }
+    }
+
+    var displayedSteps: Double {
+        if isTracking {
+            return sessionBaselineSteps + Double(currentSample?.steps ?? 0)
+        }
+        return todayProgress?.steps ?? sessionBaselineSteps
+    }
+
+    var displayedCalories: Double {
+        if isTracking {
+            return sessionBaselineCalories + (currentSample?.calories ?? 0)
+        }
+        return todayProgress?.calories ?? sessionBaselineCalories
     }
 
 }

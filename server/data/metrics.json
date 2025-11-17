@@ -1,7 +1,7 @@
 [
   {
-    "id": "bdafedb0-0e03-4298-83a3-c72fc060c600",
-    "receivedAt": "2025-11-17T21:52:45.583Z",
+    "id": "afd7c914-ea3a-426b-bf16-427a15319e94",
+    "receivedAt": "2025-11-17T23:31:36.459Z",
     "device": {
       "deviceId": "E790E0B5-9165-485D-A62A-C3D6E181CAE8",
       "model": "iPhone",
@@ -9,31 +9,63 @@
     },
     "sample": {
       "steps": 10,
-      "distance": 6.127712273038924,
-      "calories": 0.4532910907268524,
-      "start": "2025-11-17T21:52:38Z",
-      "end": "2025-11-17T21:52:45Z"
+      "distance": 6.302789766341448,
+      "calories": 0.6803548240661621,
+      "start": "2025-11-17T23:31:26Z",
+      "end": "2025-11-17T23:31:36Z"
     }
   },
   {
-    "id": "2874e68c-1298-4a9d-ba85-a6525fa8beed",
-    "receivedAt": "2025-11-17T21:52:53.124Z",
+    "id": "99cf1069-0ed1-4f87-9a44-ed56a4b5ec22",
+    "receivedAt": "2025-11-17T23:31:41.558Z",
     "device": {
       "deviceId": "E790E0B5-9165-485D-A62A-C3D6E181CAE8",
       "model": "iPhone",
       "osVersion": "26.1"
     },
     "sample": {
-      "steps": 17,
-      "distance": 10.452126362826675,
-      "calories": 0.8142387878894806,
-      "start": "2025-11-17T21:52:38Z",
-      "end": "2025-11-17T21:52:50Z"
+      "steps": 11,
+      "distance": 6.915560993831605,
+      "calories": 1.0412197923660278,
+      "start": "2025-11-17T23:31:26Z",
+      "end": "2025-11-17T23:31:41Z"
     }
   },
   {
-    "id": "0a636f7b-196e-4859-be92-8e2166102323",
-    "receivedAt": "2025-11-17T21:52:58.273Z",
+    "id": "8d019319-6b1e-44c4-a400-8522a5b46d8e",
+    "receivedAt": "2025-11-17T23:31:46.711Z",
+    "device": {
+      "deviceId": "E790E0B5-9165-485D-A62A-C3D6E181CAE8",
+      "model": "iPhone",
+      "osVersion": "26.1"
+    },
+    "sample": {
+      "steps": 11,
+      "distance": 6.915560993831605,
+      "calories": 1.4020838928222656,
+      "start": "2025-11-17T23:31:26Z",
+      "end": "2025-11-17T23:31:46Z"
+    }
+  },
+  {
+    "id": "921e8c92-7826-44be-bbc0-5310351549a5",
+    "receivedAt": "2025-11-17T23:31:51.870Z",
+    "device": {
+      "deviceId": "E790E0B5-9165-485D-A62A-C3D6E181CAE8",
+      "model": "iPhone",
+      "osVersion": "26.1"
+    },
+    "sample": {
+      "steps": 20,
+      "distance": 12.430502039380372,
+      "calories": 1.7629473006725311,
+      "start": "2025-11-17T23:31:26Z",
+      "end": "2025-11-17T23:31:51Z"
+    }
+  },
+  {
+    "id": "a6b0edaf-265e-48f5-a60a-03fb388a62e8",
+    "receivedAt": "2025-11-17T23:31:57.018Z",
     "device": {
       "deviceId": "E790E0B5-9165-485D-A62A-C3D6E181CAE8",
       "model": "iPhone",
@@ -41,74 +73,26 @@
     },
     "sample": {
       "steps": 23,
-      "distance": 14.093738227616996,
-      "calories": 1.1751877784729006,
-      "start": "2025-11-17T21:52:38Z",
-      "end": "2025-11-17T21:52:55Z"
+      "distance": 14.242554097436368,
+      "calories": 2.1238097321987155,
+      "start": "2025-11-17T23:31:26Z",
+      "end": "2025-11-17T23:31:56Z"
     }
   },
   {
-    "id": "9a710fca-5038-4648-aaca-7c67ece9aaa3",
-    "receivedAt": "2025-11-17T21:53:03.430Z",
+    "id": "16f7a584-5ef5-4a00-8f80-0a61122e3d0a",
+    "receivedAt": "2025-11-17T23:32:07.397Z",
     "device": {
       "deviceId": "E790E0B5-9165-485D-A62A-C3D6E181CAE8",
       "model": "iPhone",
       "osVersion": "26.1"
     },
     "sample": {
-      "steps": 28,
-      "distance": 17.175102113746107,
-      "calories": 1.5361370193958284,
-      "start": "2025-11-17T21:52:38Z",
-      "end": "2025-11-17T21:53:00Z"
-    }
-  },
-  {
-    "id": "fa83311e-bcc4-4f33-87af-93ef1b45a55b",
-    "receivedAt": "2025-11-17T21:53:08.583Z",
-    "device": {
-      "deviceId": "E790E0B5-9165-485D-A62A-C3D6E181CAE8",
-      "model": "iPhone",
-      "osVersion": "26.1"
-    },
-    "sample": {
-      "steps": 31,
-      "distance": 19.00466192094609,
-      "calories": 1.8970855593681337,
-      "start": "2025-11-17T21:52:38Z",
-      "end": "2025-11-17T21:53:05Z"
-    }
-  },
-  {
-    "id": "c3115b01-7b72-46d8-9091-bef81c02440a",
-    "receivedAt": "2025-11-17T21:53:13.906Z",
-    "device": {
-      "deviceId": "E790E0B5-9165-485D-A62A-C3D6E181CAE8",
-      "model": "iPhone",
-      "osVersion": "26.1"
-    },
-    "sample": {
-      "steps": 31,
-      "distance": 19.00466192094609,
-      "calories": 2.2580328059196475,
-      "start": "2025-11-17T21:52:38Z",
-      "end": "2025-11-17T21:53:11Z"
-    }
-  },
-  {
-    "id": "a93ecf54-8f74-484f-8839-4011a269ad41",
-    "receivedAt": "2025-11-17T21:53:19.211Z",
-    "device": {
-      "deviceId": "E790E0B5-9165-485D-A62A-C3D6E181CAE8",
-      "model": "iPhone",
-      "osVersion": "26.1"
-    },
-    "sample": {
-      "steps": 31,
-      "distance": 19.00466192094609,
-      "calories": 2.799450604915619,
-      "start": "2025-11-17T21:52:38Z",
-      "end": "2025-11-17T21:53:18Z"
+      "steps": 23,
+      "distance": 14.242554097436368,
+      "calories": 2.665101743936539,
+      "start": "2025-11-17T23:31:26Z",
+      "end": "2025-11-17T23:32:04Z"
     }
   }
 ]

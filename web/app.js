@@ -14,10 +14,19 @@ const chartFill = document.getElementById('sparkline-fill');
 const chartEmpty = document.getElementById('chart-empty');
 const stepsLegend = document.getElementById('steps-legend');
 const resetBtn = document.getElementById('reset-btn');
+const streakPill = document.getElementById('streak-pill');
+const stepsProgress = document.getElementById('steps-progress');
+const caloriesProgress = document.getElementById('calories-progress');
+const stepsProgressLabel = document.getElementById('steps-progress-label');
+const caloriesProgressLabel = document.getElementById('calories-progress-label');
+const goalsForm = document.getElementById('goals-form');
+const goalStepsInput = document.getElementById('goal-steps');
+const goalCaloriesInput = document.getElementById('goal-calories');
 
 let apiBase = localStorage.getItem('apiBase') || 'http://localhost:4000';
 let refreshTimer;
 const MAX_POINTS = 24;
+let summaryState = null;
 
 const formatNumber = (value, { min = 1, max = 1 } = {}) =>
   new Intl.NumberFormat(undefined, {
@@ -136,6 +145,11 @@ const fetchMetrics = async () => {
     updateSummary(payload);
     updateTable(payload.data);
     updateChart(payload.data);
+    if (payload.summary) {
+      applySummary(payload.summary);
+    } else {
+      await fetchSummaryOnly();
+    }
     refreshBtn.textContent = 'Refresh';
   } catch (error) {
     console.error(error);
@@ -190,6 +204,59 @@ resetBtn.addEventListener('click', async () => {
   } finally {
     resetBtn.disabled = false;
     resetBtn.textContent = defaultLabel;
+  }
+});
+
+const applySummary = (summary) => {
+  summaryState = summary;
+  goalStepsInput.value = summary.goals.steps;
+  goalCaloriesInput.value = summary.goals.calories;
+  streakPill.textContent = `Streak: ${summary.streak.days} day(s)`;
+  const stepPercent = Math.min(Math.max(summary.today.stepProgress * 100, 0), 100);
+  stepsProgress.style.width = `${stepPercent}%`;
+  stepsProgressLabel.textContent = `${Math.round(summary.today.steps)} / ${summary.goals.steps}`;
+  const caloriePercent = Math.min(Math.max(summary.today.calorieProgress * 100, 0), 100);
+  caloriesProgress.style.width = `${caloriePercent}%`;
+  caloriesProgressLabel.textContent = `${summary.today.calories.toFixed(1)} / ${summary.goals.calories}`;
+};
+
+const fetchSummaryOnly = async () => {
+  try {
+    const url = new URL('/api/summary', `${apiBase}/`);
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Failed to fetch summary');
+    }
+    const payload = await response.json();
+    applySummary(payload);
+  } catch (error) {
+    console.error('Summary error', error);
+  }
+};
+
+goalsForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const steps = Number(goalStepsInput.value);
+  const calories = Number(goalCaloriesInput.value);
+  if (!Number.isFinite(steps) || !Number.isFinite(calories)) {
+    alert('Enter valid numbers');
+    return;
+  }
+  try {
+    const url = new URL('/api/goals', `${apiBase}/`);
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ steps, calories }),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to save goals');
+    }
+    const payload = await response.json();
+    applySummary(payload);
+  } catch (error) {
+    console.error(error);
+    alert('Unable to save goals.');
   }
 });
 

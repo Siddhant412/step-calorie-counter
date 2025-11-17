@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ContentView: View {
     @EnvironmentObject private var pedometer: PedometerManager
@@ -7,6 +8,8 @@ struct ContentView: View {
     @AppStorage("weightKg") private var weightKg: Double = 72
     @AppStorage("heightCm") private var heightCm: Double = 175
     @State private var sliderInterval: Double = 60
+    @State private var stepGoalInput: String = ""
+    @State private var calorieGoalInput: String = ""
     @State private var showingResetConfirmation = false
     @State private var resetAlertMessage: String?
 
@@ -37,7 +40,11 @@ struct ContentView: View {
         rootContent
             .onAppear {
                 sliderInterval = pedometer.uploadInterval
+                syncGoalInputs()
                 updateConfiguration()
+            }
+            .onChange(of: pedometer.goalSettings) { _ in
+                syncGoalInputs()
             }
             .confirmationDialog(
                 "Delete all metrics from the server?",
@@ -140,6 +147,51 @@ struct ContentView: View {
                     }
                 }
 
+                SectionCard(title: "Goals & Streaks") {
+                    VStack(alignment: .leading, spacing: 16) {
+                        GoalProgressRow(
+                            title: "Steps",
+                            current: pedometer.displayedSteps,
+                            goal: Double(pedometer.goalSettings.steps),
+                            progress: progressRatio(value: pedometer.displayedSteps, goal: Double(pedometer.goalSettings.steps))
+                        )
+
+                        GoalProgressRow(
+                            title: "Calories",
+                            current: pedometer.displayedCalories,
+                            goal: pedometer.goalSettings.calories,
+                            progress: progressRatio(value: pedometer.displayedCalories, goal: pedometer.goalSettings.calories)
+                        )
+
+                        HStack {
+                            Text("Streak")
+                                .font(.subheadline)
+                            Spacer()
+                            Text("\(pedometer.streakDays) day(s)")
+                                .font(.headline)
+                                .foregroundColor(.green)
+                        }
+
+                        VStack(spacing: 12) {
+                            GoalTextField(title: "Step goal", text: $stepGoalInput, suffix: "steps", keyboard: .numberPad)
+                            GoalTextField(title: "Calorie goal", text: $calorieGoalInput, suffix: "kcal", keyboard: .decimalPad)
+                        }
+
+                        HStack {
+                            Button("Save Goals") {
+                                saveGoals()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(!canSaveGoals || pedometer.isUpdatingGoals)
+
+                            Button("Refresh Stats") {
+                                pedometer.refreshSummary()
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                    }
+                }
+
                 SectionCard(title: "Profile & API", footer: "Server URL should point to the backend POST /api/metrics endpoint.") {
                     TextField("Server URL", text: $serverURL)
                         .keyboardType(.URL)
@@ -179,6 +231,30 @@ struct ContentView: View {
 
     private func updateConfiguration() {
         pedometer.updateConfiguration(serverURL: serverURL, weightKg: weightKg, heightCm: heightCm)
+    }
+
+    private func saveGoals() {
+        guard let steps = Int(stepGoalInput), let calories = Double(calorieGoalInput) else { return }
+        pedometer.saveGoals(steps: steps, calories: calories)
+    }
+
+    private var canSaveGoals: Bool {
+        Int(stepGoalInput) != nil && Double(calorieGoalInput) != nil
+    }
+
+    private func syncGoalInputs() {
+        stepGoalInput = String(pedometer.goalSettings.steps)
+        let calories = pedometer.goalSettings.calories
+        if calories.rounded(.towardZero) == calories {
+            calorieGoalInput = String(Int(calories))
+        } else {
+            calorieGoalInput = calories.formatted(.number.precision(.fractionLength(1)))
+        }
+    }
+
+    private func progressRatio(value: Double, goal: Double) -> Double {
+        guard goal > 0 else { return 0 }
+        return min(max(value / goal, 0), 1)
     }
 
     private func resetServerData() {
@@ -303,6 +379,50 @@ private extension PedometerManager.AuthorizationState {
         case .denied: return "Denied"
         case .restricted: return "Restricted"
         case .notDetermined: return "Pending"
+        }
+    }
+}
+
+private struct GoalProgressRow: View {
+    let title: String
+    let current: Double
+    let goal: Double
+    let progress: Double
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(title)
+                Spacer()
+                Text("\(Int(current)) / \(Int(goal))")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            ProgressView(value: min(max(progress, 0), 1))
+                .tint(.green)
+        }
+    }
+}
+
+private struct GoalTextField: View {
+    let title: String
+    @Binding var text: String
+    let suffix: String
+    var keyboard: UIKeyboardType = .numberPad
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            HStack {
+                TextField(title, text: $text)
+                    .keyboardType(keyboard)
+                    .textFieldStyle(.roundedBorder)
+                Text(suffix)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
         }
     }
 }

@@ -124,6 +124,16 @@ body {
   box-shadow: 0 35px 90px rgba(6, 10, 26, 0.6);
 }
 
+.goals-card {
+  background: var(--panel);
+  border-radius: 1.2rem;
+  padding: 1.5rem;
+  box-shadow: 0 20px 60px rgba(3, 6, 18, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
 .section-title {
   display: flex;
   justify-content: space-between;
@@ -140,6 +150,76 @@ body {
 .danger {
   background: var(--danger);
   color: #fff;
+}
+
+.streak-pill {
+  background: rgba(66, 184, 131, 0.15);
+  color: var(--accent);
+  padding: 0.3rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+.progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.progress-row > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.progress-bar {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  margin-top: 0.4rem;
+  overflow: hidden;
+}
+
+.progress-bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+}
+
+.goal-form {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.goal-form label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.goal-form input {
+  margin-top: 0.3rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text);
+  padding: 0.4rem 0.6rem;
+}
+
+.goal-form button {
+  border: none;
+  border-radius: 999px;
+  padding: 0.45rem 1.4rem;
+  background: var(--accent);
+  color: #031b16;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .sparkline-shell {

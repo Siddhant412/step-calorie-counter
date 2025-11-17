@@ -28,3 +28,29 @@ struct MetricsEnvelope: Codable {
     let device: DevicePayload
     let sample: StepSample
 }
+
+struct GoalSettings: Codable, Equatable {
+    var steps: Int
+    var calories: Double
+
+    static let `default` = GoalSettings(steps: 8000, calories: 400)
+}
+
+struct SummaryPayload: Codable {
+    struct TodayProgress: Codable {
+        let steps: Double
+        let calories: Double
+        let stepGoal: Double
+        let calorieGoal: Double
+        let stepProgress: Double
+        let calorieProgress: Double
+    }
+
+    struct StreakInfo: Codable {
+        let days: Int
+    }
+
+    let goals: GoalSettings
+    let today: TodayProgress
+    let streak: StreakInfo
+}

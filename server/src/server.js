@@ -9,6 +9,7 @@ import { randomUUID } from 'crypto';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const dataFile = path.join(__dirname, '../data/metrics.json');
+const goalsFile = path.join(__dirname, '../data/goals.json');
 
 const app = express();
 app.use(cors());
@@ -16,6 +17,7 @@ app.use(express.json({ limit: '512kb' }));
 app.use(morgan('dev'));
 
 let metrics = [];
+let goals = { steps: 8000, calories: 400 };
 
 const loadFromDisk = async () => {
   try {
@@ -29,6 +31,23 @@ const loadFromDisk = async () => {
 
 const persistToDisk = async () => {
   await writeFile(dataFile, JSON.stringify(metrics, null, 2), 'utf8');
+};
+
+const loadGoals = async () => {
+  try {
+    const buffer = await readFile(goalsFile, 'utf8');
+    const next = JSON.parse(buffer);
+    if (typeof next.steps === 'number' && typeof next.calories === 'number') {
+      goals = next;
+    }
+  } catch (error) {
+    console.warn('[goals] Using defaults', error.message);
+    await persistGoals();
+  }
+};
+
+const persistGoals = async () => {
+  await writeFile(goalsFile, JSON.stringify(goals, null, 2), 'utf8');
 };
 
 const coerceNumber = (value, fallback = 0) => {
@@ -86,6 +105,73 @@ const buildSummary = (list) => {
   );
 };
 
+const dateKey = (value) => new Date(value).toISOString().split('T')[0];
+
+const buildDailyTotals = (list) => {
+  const latestPerDeviceDay = new Map();
+  list.forEach((item) => {
+    const day = dateKey(item.sample.end);
+    const key = `${item.device.deviceId}-${day}`;
+    const existing = latestPerDeviceDay.get(key);
+    if (!existing || new Date(item.sample.end) > new Date(existing.sample.end)) {
+      latestPerDeviceDay.set(key, item);
+    }
+  });
+
+  const totals = new Map();
+  latestPerDeviceDay.forEach((item) => {
+    const day = dateKey(item.sample.end);
+    const existing = totals.get(day) ?? { steps: 0, calories: 0 };
+    existing.steps += item.sample.steps;
+    existing.calories += item.sample.calories;
+    totals.set(day, existing);
+  });
+
+  return totals;
+};
+
+const computeStreak = (dailyTotals) => {
+  let streak = 0;
+  let cursor = new Date(`${dateKey(new Date())}T00:00:00Z`);
+
+  while (true) {
+    const key = cursor.toISOString().split('T')[0];
+    const totals = dailyTotals.get(key);
+    if (!totals) {
+      break;
+    }
+    const meetsGoal = totals.steps >= goals.steps && totals.calories >= goals.calories;
+    if (!meetsGoal) {
+      break;
+    }
+    streak += 1;
+    cursor.setUTCDate(cursor.getUTCDate() - 1);
+  }
+
+  return streak;
+};
+
+const buildSummaryPayload = () => {
+  const dailyTotals = buildDailyTotals(metrics);
+  const todayKey = dateKey(new Date());
+  const todayTotals = dailyTotals.get(todayKey) ?? { steps: 0, calories: 0 };
+
+  return {
+    goals,
+    today: {
+      steps: todayTotals.steps,
+      calories: todayTotals.calories,
+      stepGoal: goals.steps,
+      calorieGoal: goals.calories,
+      stepProgress: goals.steps ? todayTotals.steps / goals.steps : 0,
+      calorieProgress: goals.calories ? todayTotals.calories / goals.calories : 0,
+    },
+    streak: {
+      days: computeStreak(dailyTotals),
+    },
+  };
+};
+
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', count: metrics.length });
 });
@@ -119,7 +205,27 @@ app.get('/api/metrics', (req, res) => {
     data,
     totals: buildSummary(data),
     current: latestSample,
+    summary: buildSummaryPayload(),
   });
+});
+
+app.get('/api/goals', (_req, res) => {
+  res.json(buildSummaryPayload());
+});
+
+app.put('/api/goals', async (req, res) => {
+  const nextSteps = Number(req.body?.steps);
+  const nextCalories = Number(req.body?.calories);
+  if (!Number.isFinite(nextSteps) || nextSteps <= 0 || !Number.isFinite(nextCalories) || nextCalories <= 0) {
+    return res.status(400).json({ message: 'steps and calories must be positive numbers' });
+  }
+  goals = { steps: Math.round(nextSteps), calories: nextCalories };
+  await persistGoals();
+  res.json(buildSummaryPayload());
+});
+
+app.get('/api/summary', (_req, res) => {
+  res.json(buildSummaryPayload());
 });
 
 app.post('/api/metrics', async (req, res) => {
@@ -153,7 +259,7 @@ app.delete('/api/metrics', async (_req, res) => {
 });
 
 const bootstrap = async () => {
-  await loadFromDisk();
+  await Promise.all([loadFromDisk(), loadGoals()]);
   const port = process.env.PORT ?? 4000;
   app.listen(port, () => {
     console.log(`API listening on http://localhost:${port}`);

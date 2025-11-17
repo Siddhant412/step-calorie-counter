@@ -18,9 +18,15 @@ final class APIClient {
 
     private var baseURL: URL?
     private let session: URLSession
+    private let decoder: JSONDecoder
+    private let encoder: JSONEncoder
 
     init(baseURL: String = "http://localhost:4000") {
         self.session = URLSession(configuration: .default)
+        self.decoder = JSONDecoder()
+        self.decoder.dateDecodingStrategy = .iso8601
+        self.encoder = JSONEncoder()
+        self.encoder.dateEncodingStrategy = .iso8601
         updateBaseURL(baseURL)
     }
 
@@ -45,9 +51,6 @@ final class APIClient {
             model: UIDevice.current.name,
             osVersion: UIDevice.current.systemVersion
         ), sample: sample)
-
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
 
         do {
             request.httpBody = try encoder.encode(payload)
@@ -92,6 +95,73 @@ final class APIClient {
             }
 
             completion(.success(()))
+        }.resume()
+    }
+
+    func fetchSummary(completion: @escaping (Result<SummaryPayload, Error>) -> Void) {
+        guard let baseURL else {
+            completion(.failure(APIError.invalidURL))
+            return
+        }
+
+        let endpoint = baseURL.appendingPathComponent("api/summary")
+        session.dataTask(with: endpoint) { data, response, error in
+            if let error {
+                completion(.failure(error))
+                return
+            }
+
+            guard let data, let httpResponse = response as? HTTPURLResponse, 200..<300 ~= httpResponse.statusCode else {
+                completion(.failure(APIError.invalidResponse))
+                return
+            }
+
+            do {
+                let summary = try self.decoder.decode(SummaryPayload.self, from: data)
+                completion(.success(summary))
+            } catch {
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+
+    func updateGoals(_ goals: GoalSettings, completion: @escaping (Result<SummaryPayload, Error>) -> Void) {
+        guard let baseURL else {
+            completion(.failure(APIError.invalidURL))
+            return
+        }
+
+        var request = URLRequest(url: baseURL.appendingPathComponent("api/goals"))
+        request.httpMethod = "PUT"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: [
+                "steps": goals.steps,
+                "calories": goals.calories,
+            ])
+        } catch {
+            completion(.failure(error))
+            return
+        }
+
+        session.dataTask(with: request) { data, response, error in
+            if let error {
+                completion(.failure(error))
+                return
+            }
+
+            guard let data, let httpResponse = response as? HTTPURLResponse, 200..<300 ~= httpResponse.statusCode else {
+                completion(.failure(APIError.invalidResponse))
+                return
+            }
+
+            do {
+                let summary = try self.decoder.decode(SummaryPayload.self, from: data)
+                completion(.success(summary))
+            } catch {
+                completion(.failure(error))
+            }
         }.resume()
     }
 }
