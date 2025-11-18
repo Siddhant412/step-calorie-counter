@@ -151,10 +151,91 @@ const computeStreak = (dailyTotals) => {
   return streak;
 };
 
+const buildInsights = (dailyTotals) => {
+  const entries = Array.from(dailyTotals.entries()).map(([date, totals]) => ({
+    date,
+    steps: totals.steps,
+    calories: totals.calories,
+  }));
+
+  if (!entries.length) {
+    return {
+      averageSteps7d: 0,
+      averageCalories7d: 0,
+      goalComplianceRate: 0,
+      bestDay: null,
+    };
+  }
+
+  entries.sort((a, b) => new Date(a.date) - new Date(b.date));
+  const lookbackDays = 7;
+  const cutoff = new Date();
+  cutoff.setUTCHours(0, 0, 0, 0);
+  cutoff.setUTCDate(cutoff.getUTCDate() - (lookbackDays - 1));
+
+  const window = entries.filter((entry) => new Date(entry.date) >= cutoff);
+  const divisor = window.length || 1;
+  const avgSteps = window.reduce((sum, entry) => sum + entry.steps, 0) / divisor;
+  const avgCalories = window.reduce((sum, entry) => sum + entry.calories, 0) / divisor;
+  const complianceDays = window.filter(
+    (entry) => entry.steps >= goals.steps && entry.calories >= goals.calories
+  ).length;
+
+  const bestDay = entries.reduce((best, entry) => {
+    if (!best || entry.steps > best.steps) {
+      return entry;
+    }
+    return best;
+  }, null);
+
+  return {
+    averageSteps7d: Math.round(avgSteps),
+    averageCalories7d: Math.round(avgCalories),
+    goalComplianceRate: window.length ? complianceDays / window.length : 0,
+    bestDay,
+  };
+};
+
+const linearForecast = (values) => {
+  if (!values.length) return 0;
+  if (values.length < 2) return values[values.length - 1];
+
+  const n = values.length;
+  let sumX = 0;
+  let sumY = 0;
+  let sumXY = 0;
+  let sumXX = 0;
+
+  values.forEach((value, index) => {
+    sumX += index;
+    sumY += value;
+    sumXY += index * value;
+    sumXX += index * index;
+  });
+
+  const denominator = n * sumXX - sumX * sumX;
+  const slope = denominator === 0 ? 0 : (n * sumXY - sumX * sumY) / denominator;
+  const intercept = (sumY - slope * sumX) / n;
+  const prediction = intercept + slope * n;
+  return Math.max(0, prediction);
+};
+
 const buildSummaryPayload = () => {
   const dailyTotals = buildDailyTotals(metrics);
   const todayKey = dateKey(new Date());
   const todayTotals = dailyTotals.get(todayKey) ?? { steps: 0, calories: 0 };
+  const insights = buildInsights(dailyTotals);
+  const sortedEntries = Array.from(dailyTotals.entries()).sort(
+    (a, b) => new Date(a[0]) - new Date(b[0])
+  );
+  const recentEntries = sortedEntries.slice(-14);
+  const stepsSeries = recentEntries.map(([, totals]) => totals.steps);
+  const caloriesSeries = recentEntries.map(([, totals]) => totals.calories);
+  const predictions = {
+    steps: Math.round(linearForecast(stepsSeries)),
+    calories: Math.round(linearForecast(caloriesSeries)),
+    basisDays: recentEntries.length,
+  };
 
   return {
     goals,
@@ -169,6 +250,8 @@ const buildSummaryPayload = () => {
     streak: {
       days: computeStreak(dailyTotals),
     },
+    insights,
+    predictions,
   };
 };
 
@@ -226,6 +309,16 @@ app.put('/api/goals', async (req, res) => {
 
 app.get('/api/summary', (_req, res) => {
   res.json(buildSummaryPayload());
+});
+
+app.get('/api/insights', (_req, res) => {
+  const payload = buildSummaryPayload();
+  res.json(payload.insights);
+});
+
+app.get('/api/predictions', (_req, res) => {
+  const payload = buildSummaryPayload();
+  res.json(payload.predictions);
 });
 
 app.post('/api/metrics', async (req, res) => {

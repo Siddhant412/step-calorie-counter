@@ -22,6 +22,12 @@ const caloriesProgressLabel = document.getElementById('calories-progress-label')
 const goalsForm = document.getElementById('goals-form');
 const goalStepsInput = document.getElementById('goal-steps');
 const goalCaloriesInput = document.getElementById('goal-calories');
+const avgStepsEl = document.getElementById('insight-avg-steps');
+const avgCaloriesEl = document.getElementById('insight-avg-calories');
+const complianceEl = document.getElementById('insight-compliance');
+const bestDayEl = document.getElementById('insight-best-day');
+const predictionStepsEl = document.getElementById('prediction-steps');
+const predictionCaloriesEl = document.getElementById('prediction-calories');
 
 let apiBase = localStorage.getItem('apiBase') || 'http://localhost:4000';
 let refreshTimer;
@@ -218,6 +224,24 @@ const applySummary = (summary) => {
   const caloriePercent = Math.min(Math.max(summary.today.calorieProgress * 100, 0), 100);
   caloriesProgress.style.width = `${caloriePercent}%`;
   caloriesProgressLabel.textContent = `${summary.today.calories.toFixed(1)} / ${summary.goals.calories}`;
+
+  if (summary.insights) {
+    avgStepsEl.textContent = Math.round(summary.insights.averageSteps7d).toLocaleString();
+    avgCaloriesEl.textContent = Math.round(summary.insights.averageCalories7d).toLocaleString();
+    complianceEl.textContent = `${Math.round((summary.insights.goalComplianceRate || 0) * 100)}%`;
+    if (summary.insights.bestDay) {
+      const best = summary.insights.bestDay;
+      const date = new Date(best.date).toLocaleDateString();
+      bestDayEl.textContent = `${date} (${best.steps.toLocaleString()} steps)`;
+    } else {
+      bestDayEl.textContent = '–';
+    }
+  }
+
+  if (summary.predictions) {
+    predictionStepsEl.textContent = Math.round(summary.predictions.steps || 0).toLocaleString();
+    predictionCaloriesEl.textContent = Math.round(summary.predictions.calories || 0).toLocaleString();
+  }
 };
 
 const fetchSummaryOnly = async () => {

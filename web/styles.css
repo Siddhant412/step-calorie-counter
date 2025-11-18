@@ -134,6 +134,13 @@ body {
   gap: 1.2rem;
 }
 
+.insights-card {
+  background: var(--panel);
+  border-radius: 1.2rem;
+  padding: 1.5rem;
+  box-shadow: 0 20px 60px rgba(3, 6, 18, 0.5);
+}
+
 .section-title {
   display: flex;
   justify-content: space-between;
@@ -220,6 +227,32 @@ body {
   color: #031b16;
   font-weight: 600;
   cursor: pointer;
+}
+
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.insight-tile {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 0.9rem;
+  padding: 0.8rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.insight-tile p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.insight-tile strong {
+  font-size: 1.3rem;
+  color: var(--text);
 }
 
 .sparkline-shell {

@@ -19,7 +19,9 @@ End-to-end starter kit for streaming pedometer data from an iPhone to a lightwei
    - `POST /api/metrics` – iOS uploads `{ device, sample }` payloads
    - `GET /api/metrics` – dashboard fetches latest samples (`summary` field includes goals/today/streak)
    - `DELETE /api/metrics` – reset samples
-   - `GET /api/summary` – compact goal summary (used by mobile app)
+   - `GET /api/summary` – compact goal summary plus insights/predictions (used by mobile app)
+   - `GET /api/insights` – rolling averages/compliance/best day
+   - `GET /api/predictions` – next-day step + calorie forecasts (linear regression)
    - `GET/PUT /api/goals` – read/update daily step & calorie targets
 
 2. **iOS app**
@@ -35,10 +37,12 @@ End-to-end starter kit for streaming pedometer data from an iPhone to a lightwei
    - Enter the API base URL (e.g., ngrok tunnel) and watch totals, goal progress, and streak updates in real time.
    - Use the goal form to adjust step/calorie targets – changes sync back to iOS instantly.
 
-## Daily goals & streaks
+## Daily goals, streaks & insights
 
-- Goals are stored centrally in `server/data/goals.json` and exposed through `/api/summary` and `/api/goals`.
+- Goals are stored centrally in `server/data/goals.json` and exposed through `/api/summary`, `/api/insights`, `/api/predictions`, and `/api/goals`.
 - The server aggregates samples per day (UTC) to compute:
   - **Today** – total steps/calories vs goal with progress ratios
   - **Streak** – consecutive days (up to today) meeting both goals
-- The iOS app fetches the summary whenever it launches, when the server URL changes, after every successful upload, and after resets. The dashboard refresh uses the embedded summary returned from `/api/metrics` and can also fetch `/api/summary` directly.
+  - **Insights** – 7-day rolling averages, goal-compliance rate, and the best-performing day
+  - **Predictions** – simple linear-regression forecasts for tomorrow’s steps/calories using the last ~two weeks of daily totals
+- The iOS app fetches the summary whenever it launches, when the server URL changes, after every successful upload, and after resets. The dashboard refresh uses the embedded summary returned from `/api/metrics` and can also fetch `/api/summary` or `/api/insights` directly.
