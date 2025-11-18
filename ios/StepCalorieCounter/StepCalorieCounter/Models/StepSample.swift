@@ -33,7 +33,7 @@ struct GoalSettings: Codable, Equatable {
     var steps: Int
     var calories: Double
 
-    static let `default` = GoalSettings(steps: 8000, calories: 400)
+    static let `default` = GoalSettings(steps: 300, calories: 100)
 }
 
 struct SummaryPayload: Codable {

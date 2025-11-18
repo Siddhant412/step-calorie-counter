@@ -76,7 +76,9 @@ struct ContentView: View {
     @ViewBuilder
     private var scrollContainer: some View {
         if #available(iOS 16.0, *) {
-            baseScroll.scrollIndicators(.hidden)
+            baseScroll
+                .scrollIndicators(.hidden)
+                .scrollDismissesKeyboard(.interactively)
         } else {
             baseScroll
         }
@@ -227,6 +229,7 @@ struct ContentView: View {
             .padding(.horizontal)
             .padding(.vertical, 24)
         }
+        .hideKeyboardOnTap()
     }
 
     private func updateConfiguration() {
@@ -234,12 +237,12 @@ struct ContentView: View {
     }
 
     private func saveGoals() {
-        guard let steps = Int(stepGoalInput), let calories = Double(calorieGoalInput) else { return }
+        guard let steps = parsedStepGoal(), let calories = parsedCalorieGoal() else { return }
         pedometer.saveGoals(steps: steps, calories: calories)
     }
 
     private var canSaveGoals: Bool {
-        Int(stepGoalInput) != nil && Double(calorieGoalInput) != nil
+        parsedStepGoal() != nil && parsedCalorieGoal() != nil
     }
 
     private func syncGoalInputs() {
@@ -255,6 +258,18 @@ struct ContentView: View {
     private func progressRatio(value: Double, goal: Double) -> Double {
         guard goal > 0 else { return 0 }
         return min(max(value / goal, 0), 1)
+    }
+
+    private func parsedStepGoal() -> Int? {
+        let trimmed = stepGoalInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let value = Double(trimmed), value > 0 else { return nil }
+        return Int(value.rounded())
+    }
+
+    private func parsedCalorieGoal() -> Double? {
+        let trimmed = calorieGoalInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let value = Double(trimmed), value > 0 else { return nil }
+        return value
     }
 
     private func resetServerData() {
@@ -426,3 +441,13 @@ private struct GoalTextField: View {
         }
     }
 }
+
+#if canImport(UIKit)
+private extension View {
+    func hideKeyboardOnTap() -> some View {
+        onTapGesture {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
+    }
+}
+#endif
